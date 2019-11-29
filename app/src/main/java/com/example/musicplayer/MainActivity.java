@@ -23,8 +23,27 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         songList = findViewById(R.id.songListView); // List s jednotlivymi pisnickami
+
+        permission();
     }
 
 
+    public void permission(){
+        Dexter.withActivity(this).withPermission(Manifest.permission.READ_EXTERNAL_STORAGE).withListener(new PermissionListener() { // Vyuziti permissionu na cteni z externi pameti
+            @Override
+            public void onPermissionGranted(PermissionGrantedResponse response) {
 
+            }
+
+            @Override
+            public void onPermissionDenied(PermissionDeniedResponse response) {
+
+            }
+
+            @Override
+            public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+
+            }
+        }) .check();
+    }
 }
