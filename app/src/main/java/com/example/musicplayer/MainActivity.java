@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.os.Bundle;
+import android.os.Environment;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.karumi.dexter.Dexter;
@@ -13,16 +15,20 @@ import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
+import java.io.File;
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity {
 
-    ListView songList;
+    ListView songListView;
+    String [] songItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        songList = findViewById(R.id.songListView); // List s jednotlivymi pisnickami
+        songListView = (ListView) findViewById(R.id.songListView); // List s jednotlivymi pisnickami
 
         permission();
     }
@@ -31,8 +37,8 @@ public class MainActivity extends AppCompatActivity {
     public void permission(){
         Dexter.withActivity(this).withPermission(Manifest.permission.READ_EXTERNAL_STORAGE).withListener(new PermissionListener() { // Vyuziti permissionu na cteni z externi pameti
             @Override
-            public void onPermissionGranted(PermissionGrantedResponse response) {
-
+            public void onPermissionGranted(PermissionGrantedResponse response) { // Pokud je permission povolen, volam display metodu, ktera mi zobrazuje jednotlive pisnicky v seznamu z externi pameti
+            displaySongs();
             }
 
             @Override
@@ -45,5 +51,34 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }) .check();
+    }
+
+    public ArrayList<File> searchSong(File song){
+        ArrayList<File> songArrayList = new ArrayList<>();
+
+        File[] songFiles = song.listFiles();
+
+        for(int i=0; i < songFiles.length; i++){
+            File singleFile = songFiles[i];
+            if(singleFile.isDirectory() && !singleFile.isHidden()){
+                songArrayList.addAll(searchSong(singleFile));
+            }
+            else if(singleFile.getName().endsWith(".mp3")){
+                songArrayList.add(singleFile);
+            }
+        }
+        return songArrayList;
+    }
+
+    public void displaySongs(){
+        final ArrayList<File> songList = searchSong(Environment.getExternalStorageDirectory());
+
+        songItems = new String[songList.size()];
+
+        for(int i=0; i<songList.size(); i++){
+            songItems[i] = songList.get(i).getName().replace(".mp3",""); // Odstranuju priponu souboru
+        }
+        ArrayAdapter<String> myAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, songItems); // Pouziti ArrayAdapteru ktery pouziva pole jako datasource
+        songListView.setAdapter(myAdapter);
     }
 }
