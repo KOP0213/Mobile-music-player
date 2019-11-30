@@ -3,8 +3,11 @@ package com.example.musicplayer;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -80,5 +83,14 @@ public class MainActivity extends AppCompatActivity {
         }
         ArrayAdapter<String> myAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, songItems); // Pouziti ArrayAdapteru ktery pouziva pole jako datasource
         songListView.setAdapter(myAdapter);
+
+        songListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String nameOfSong = songListView.getItemAtPosition(position).toString();
+                startActivity(new Intent(getApplicationContext(), MusicPlayerActivity.class)
+                .putExtra("songs", songList).putExtra("songname",nameOfSong).putExtra("position", position));
+            }
+        });
     }
 }

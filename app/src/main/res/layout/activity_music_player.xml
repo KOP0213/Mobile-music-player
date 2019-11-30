@@ -15,21 +15,23 @@
         android:gravity="center"
         android:orientation="vertical"
         >
+
         <ImageView
             android:layout_width="255dp"
             android:layout_height="240dp"
-            android:src="@drawable/playerLogo"
-            />
+            android:layout_marginBottom="80dp"
+            android:src="@drawable/playerlogo" />
 
         <TextView
             android:id="@+id/songName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
+            android:layout_marginTop="18dp"
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
             android:scrollHorizontally="true"
             android:singleLine="true"
+            android:textAlignment="center"
             android:textColor="@color/colorPrimary"
             android:textSize="25dp" />
     </LinearLayout>
@@ -49,29 +51,30 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
-                android:layout_marginTop="75dp" />
+                android:layout_marginTop="75dp"
+                android:thumbTint="@android:color/background_dark" />
 
             <Button
                 android:id="@+id/pauseButton"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:layout_centerHorizontal="true"
                 android:background="@drawable/pause" />
 
             <Button
                 android:id="@+id/nextButton"
-                android:layout_width="35dp"
-                android:layout_height="35dp"
-                android:layout_marginTop="10dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="15dp"
                 android:layout_toRightOf="@id/pauseButton"
                 android:layout_centerHorizontal="true"
                 android:background="@drawable/next" />
 
             <Button
                 android:id="@+id/previousButton"
-                android:layout_width="35dp"
-                android:layout_height="35dp"
-                android:layout_marginTop="10dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="15dp"
                 android:layout_toLeftOf="@id/pauseButton"
                 android:layout_centerHorizontal="true"
                 android:background="@drawable/previous" />
