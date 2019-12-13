@@ -54,7 +54,23 @@ public class MusicPlayerActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()){
-            case R.id.item1:
+            case R.id.item1: // Email item v menu - zaslani emailu s nazvem aktualni pisne
+                Toast.makeText(this, "Item 1 selected", Toast.LENGTH_SHORT).show();
+
+                songDurationBar.setMax(mediaPlayer.getDuration());
+
+                if(mediaPlayer.isPlaying()){
+                    pauseButton.setBackgroundResource(R.drawable.play);
+                    mediaPlayer.pause();
+                }
+                else {
+                    pauseButton.setBackgroundResource(R.drawable.pause);
+                    mediaPlayer.start();
+                }
+                // volani nove aktivity pro vypis emailu
+                Intent mIntent = new Intent(this, emailActivity.class);
+                startActivity(mIntent.putExtra("SONG_NAME_ID", songName));
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
