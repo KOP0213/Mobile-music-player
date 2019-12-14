@@ -6,8 +6,8 @@
     android:orientation="vertical"
     android:weightSum="10"
     android:layout_height="match_parent"
-    tools:context=".MusicPlayerActivity">
-    
+    tools:context=".MusicPlayerActivity"
+    android:background="@drawable/background">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -17,6 +17,7 @@
         >
 
         <ImageView
+            android:id="@+id/playIcon"
             android:layout_width="255dp"
             android:layout_height="240dp"
             android:layout_marginBottom="80dp"
@@ -32,8 +33,15 @@
             android:scrollHorizontally="true"
             android:singleLine="true"
             android:textAlignment="center"
-            android:textColor="@color/colorPrimary"
+            android:textColor="@android:color/white"
             android:textSize="25dp" />
+
+        <SeekBar
+            android:id="@+id/durationBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="111dp"
+            android:thumbTint="@android:color/white" />
     </LinearLayout>
 
     <LinearLayout
@@ -45,14 +53,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="5dp">
-
-            <SeekBar
-                android:id="@+id/durationBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_marginTop="75dp"
-                android:thumbTint="@android:color/background_dark" />
 
             <Button
                 android:id="@+id/pauseButton"

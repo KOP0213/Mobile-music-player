@@ -6,4 +6,8 @@
         android:title="Share this song via e-mail"
         app:showAsAction="never"></item>
 
+    <item android:id="@+id/item2"
+        android:title="Share this song on Facebook"
+        app:showAsAction="never"></item>
+
 </menu>

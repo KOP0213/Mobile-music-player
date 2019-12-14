@@ -3,14 +3,12 @@ package com.example.musicplayer;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Intent;
-import android.graphics.BlendModeColorFilter;
-import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.PorterDuffXfermode;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,8 +16,10 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,10 +32,13 @@ public class MusicPlayerActivity extends AppCompatActivity {
     TextView songNameTextView;
     Button nextButton, previousButton, pauseButton;
     SeekBar songDurationBar;
+    ImageView playIcon;
+
+    Animation rotateAnimation;
 
     static MediaPlayer mediaPlayer;
     int pos;
-    //int colorPrimary = R.color.colorPrimary;
+    long animationDuration = 1000;
     String songName, actualSongName;
 
     ArrayList<File> songList;
@@ -69,25 +72,25 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 }
                 // volani nove aktivity pro vypis emailu
                 Intent mIntent = new Intent(this, emailActivity.class);
-                startActivity(mIntent.putExtra("SONG_NAME_ID", songName));
+                startActivity(mIntent.putExtra("SONG_NAME_ID", actualSongName));
                 break;
+
+            case R.id.item2:
+
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_music_player);
 
         songNameTextView = findViewById(R.id.songName);
-
         nextButton = findViewById(R.id.nextButton);
         previousButton = findViewById(R.id.previousButton);
         pauseButton = findViewById(R.id.pauseButton);
-
+        playIcon = findViewById(R.id.playIcon);
         songDurationBar = findViewById(R.id.durationBar);
 
 
@@ -172,6 +175,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                fadeAnimation();
                 songDurationBar.setMax(mediaPlayer.getDuration());
 
                 if(mediaPlayer.isPlaying()){
@@ -192,6 +196,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                rotateAnimationRight();
+                fadeNextAnimation();
                 mediaPlayer.stop();
                 mediaPlayer.release();
                 pos = ((pos+1)%songList.size()); // zde se urcuje nova pozice
@@ -213,7 +219,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
         previousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                rotateAnimationLeft();
+                fadePreviousAnimation();
                 mediaPlayer.stop();
                 mediaPlayer.release();
                 pos = ((pos-1)<0)?(songList.size()-1):(pos-1); // zde se urcuje nova pozice
@@ -230,4 +237,36 @@ public class MusicPlayerActivity extends AppCompatActivity {
     }
 
 
+    public void animation(View view){
+        ObjectAnimator rotateAnimation = ObjectAnimator.ofFloat(playIcon, "rotation", 0f, 360f);
+        rotateAnimation.setDuration(animationDuration);
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.start();
+    }
+
+    private void rotateAnimationLeft(){
+        rotateAnimation = AnimationUtils.loadAnimation(this,R.anim.rotateleft);
+        playIcon.startAnimation(rotateAnimation);
+    }
+
+    private void rotateAnimationRight(){
+        rotateAnimation = AnimationUtils.loadAnimation(this,R.anim.rotateright);
+        playIcon.startAnimation(rotateAnimation);
+    }
+
+    private void fadeAnimation(){
+        rotateAnimation = AnimationUtils.loadAnimation(this,R.anim.fade);
+        pauseButton.startAnimation(rotateAnimation);
+    }
+
+    private void fadeNextAnimation(){
+        rotateAnimation = AnimationUtils.loadAnimation(this,R.anim.fade);
+        nextButton.startAnimation(rotateAnimation);
+    }
+
+    private void fadePreviousAnimation(){
+        rotateAnimation = AnimationUtils.loadAnimation(this,R.anim.fade);
+        previousButton.startAnimation(rotateAnimation);
+    }
 }
