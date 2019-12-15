@@ -31,6 +31,8 @@ import java.util.ArrayList;
 
 public class MusicPlayerActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
 
+    private Gyroscope gyroscope;
+
     public static final int SWIPE_TRESHOLD = 100;
     public static final int SWIPE_VELOCITY_TRESHOLD = 100;
     TextView songNameTextView;
@@ -40,6 +42,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
 
     Animation rotateAnimation;
 
+    boolean rotationEnabled;
     static MediaPlayer mediaPlayer;
     int pos;
     long animationDuration = 1000;
@@ -82,6 +85,15 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
 
             case R.id.item2:
 
+            case R.id.item3:
+                if (item.getTitle().equals("Use rotation to skip the songs - NO")) {
+                    item.setTitle("Use rotation to skip the songs - YES");
+                    rotationEnabled = true;
+
+                } else {
+                    item.setTitle("Use rotation to skip the songs - NO");
+                    rotationEnabled = false;
+                }
         }
         return super.onOptionsItemSelected(item);
     }
@@ -211,7 +223,9 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                 mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
                 songName = songList.get(pos).getName();
                 songNameTextView.setText(songName);
+
                 songDurationBar.setMax(mediaPlayer.getDuration());
+                songDurationBar.setProgress(0);
 
                 mediaPlayer.start();
             }
@@ -240,9 +254,64 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
             }
         });
 
+
         gestureDetector = new GestureDetector(this);
+
+        // Nova instance gyroscope classy
+        gyroscope = new Gyroscope(this);
+
+        gyroscope.setListener(new Gyroscope.Listener() {
+            @Override
+            public void onRotation(float rx, float ry, float rz) {
+                if(rotationEnabled) {
+                    if (rz > 1.0f) {
+                        rotateAnimationLeft();
+                        fadePreviousAnimation();
+                        mediaPlayer.stop();
+                        mediaPlayer.release();
+                        pos = ((pos - 1) < 0) ? (songList.size() - 1) : (pos - 1); // zde se urcuje nova pozice
+
+                        Uri uri = Uri.parse(songList.get(pos).toString());
+                        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+                        songName = songList.get(pos).getName();
+                        songNameTextView.setText(songName);
+                        songDurationBar.setMax(mediaPlayer.getDuration());
+
+                        mediaPlayer.start();
+                    } else if (rz < -1.0f) {
+                        rotateAnimationRight();
+                        fadeNextAnimation();
+                        mediaPlayer.stop();
+                        mediaPlayer.release();
+                        pos = ((pos + 1) % songList.size()); // zde se urcuje nova pozice
+
+                        Uri uri = Uri.parse(songList.get(pos).toString());
+                        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+                        songName = songList.get(pos).getName();
+                        songNameTextView.setText(songName);
+                        songDurationBar.setMax(mediaPlayer.getDuration());
+
+                        mediaPlayer.start();
+                    }
+                }
+            }
+        });
+
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        gyroscope.register();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        gyroscope.register();
+    }
 
     public void animation(View view){
         ObjectAnimator rotateAnimation = ObjectAnimator.ofFloat(playIcon, "rotation", 0f, 360f);
