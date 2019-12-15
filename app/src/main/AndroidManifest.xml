@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.musicplayer">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> // Permission na external storage
+    <uses-permission android:name="android.permission.INTERNET" /> // Permision na internet
 
     <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="true"/>
     <application

@@ -6,10 +6,15 @@
         app:showAsAction="never"></item>
 
     <item android:id="@+id/item2"
-        android:title="Share this song on Facebook"
+        android:title="Share this song on Twitter"
         app:showAsAction="never"></item>
 
     <item android:id="@+id/item3"
         android:title="Use rotation to skip the songs - NO"
         app:showAsAction="never"></item>
+
+    <item android:id="@+id/item4"
+        android:title="back"
+        android:icon="@drawable/back"
+        app:showAsAction="always"></item>
 </menu>

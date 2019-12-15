@@ -12,6 +12,8 @@ import android.graphics.PorterDuffColorFilter;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.StrictMode;
+import android.text.format.DateFormat;
 import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,13 +27,20 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import twitter4j.Status;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.TwitterFactory;
+import twitter4j.conf.ConfigurationBuilder;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class MusicPlayerActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
 
     private Gyroscope gyroscope;
+    private Twitter twitter;
 
     public static final int SWIPE_TRESHOLD = 100;
     public static final int SWIPE_VELOCITY_TRESHOLD = 100;
@@ -64,6 +73,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
         switch (item.getItemId()){
             case R.id.item1: // Email item v menu - zaslani emailu s nazvem aktualni pisne
                 Toast.makeText(this, "Item 1 selected", Toast.LENGTH_SHORT).show();
@@ -84,6 +94,9 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                 break;
 
             case R.id.item2:
+                configureTwitter();
+                sendTweet();
+                break;
 
             case R.id.item3:
                 if (item.getTitle().equals("Use rotation to skip the songs - NO")) {
@@ -94,12 +107,19 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                     item.setTitle("Use rotation to skip the songs - NO");
                     rotationEnabled = false;
                 }
+
+            case R.id.item4:
+                onBackPressed();
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_music_player);
 
@@ -110,11 +130,8 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         playIcon = findViewById(R.id.playIcon);
         songDurationBar = findViewById(R.id.durationBar);
 
-
-
         getSupportActionBar().setTitle("Now playing");
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
+
 
         updateDuration = new Thread(){ // Vyuziti threadu pri praci s zobrazovanim prubehu pisne
             @Override
@@ -129,7 +146,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                  */
                 while(currentDuration<totalDuration){
                     try{
-                        sleep(1500);
+                        sleep(500);
                         currentDuration = mediaPlayer.getCurrentPosition();
                         songDurationBar.setProgress(currentDuration);
                     }
@@ -139,6 +156,11 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                 }
             }
         };
+
+        if(mediaPlayer!=null){
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
 
         Intent inent = getIntent();
         Bundle bundle = inent.getExtras();
@@ -161,12 +183,10 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         songDurationBar.setMax(mediaPlayer.getDuration());
 
         updateDuration.start(); // volam update na duration, startuju thread
-        //songDurationBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
-        songDurationBar.getProgressDrawable().setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary), PorterDuff.Mode.MULTIPLY));
 
-        songDurationBar.getProgressDrawable().setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary), PorterDuff.Mode.SRC_IN));
-        //songDurationBar.getProgressDrawable().setColorFilter(new PorterDuffColorFilter(R.color.colorPrimary, PorterDuff.Mode.SRC_IN));
-        //songDurationBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_IN);
+        // prekresluju duration
+        songDurationBar.getProgressDrawable().setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary), PorterDuff.Mode.MULTIPLY));
+        songDurationBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.SRC_IN);
 
 
         songDurationBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -213,6 +233,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                updateDuration.interrupt();
                 rotateAnimationRight();
                 fadeNextAnimation();
                 mediaPlayer.stop();
@@ -222,6 +243,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                 Uri uri = Uri.parse(songList.get(pos).toString());
                 mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
                 songName = songList.get(pos).getName();
+                actualSongName = songList.get(pos).getName();
                 songNameTextView.setText(songName);
 
                 songDurationBar.setMax(mediaPlayer.getDuration());
@@ -238,6 +260,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         previousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                updateDuration.interrupt();
                 rotateAnimationLeft();
                 fadePreviousAnimation();
                 mediaPlayer.stop();
@@ -247,6 +270,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                 Uri uri = Uri.parse(songList.get(pos).toString());
                 mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
                 songName = songList.get(pos).getName();
+                actualSongName = songList.get(pos).getName();
                 songNameTextView.setText(songName);
                 songDurationBar.setMax(mediaPlayer.getDuration());
 
@@ -265,29 +289,31 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
             public void onRotation(float rx, float ry, float rz) {
                 if(rotationEnabled) {
                     if (rz > 1.0f) {
+                        updateDuration.interrupt();
                         rotateAnimationLeft();
                         fadePreviousAnimation();
                         mediaPlayer.stop();
                         mediaPlayer.release();
                         pos = ((pos - 1) < 0) ? (songList.size() - 1) : (pos - 1); // zde se urcuje nova pozice
-
                         Uri uri = Uri.parse(songList.get(pos).toString());
                         mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
                         songName = songList.get(pos).getName();
+                        actualSongName = songList.get(pos).getName();
                         songNameTextView.setText(songName);
                         songDurationBar.setMax(mediaPlayer.getDuration());
 
                         mediaPlayer.start();
                     } else if (rz < -1.0f) {
+                        updateDuration.interrupt();
                         rotateAnimationRight();
                         fadeNextAnimation();
                         mediaPlayer.stop();
                         mediaPlayer.release();
                         pos = ((pos + 1) % songList.size()); // zde se urcuje nova pozice
-
                         Uri uri = Uri.parse(songList.get(pos).toString());
                         mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
                         songName = songList.get(pos).getName();
+                        actualSongName = songList.get(pos).getName();
                         songNameTextView.setText(songName);
                         songDurationBar.setMax(mediaPlayer.getDuration());
 
@@ -296,6 +322,28 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
                 }
             }
         });
+
+    }
+
+    public void configureTwitter() {
+        ConfigurationBuilder cb = new ConfigurationBuilder();
+        cb.setDebugEnabled(true)
+                .setOAuthConsumerKey("oEJEAxEPjNgWb0O35QNVaA")
+                .setOAuthConsumerSecret("2TyiPmQMpnYHPE3S8ITkIQWld5fjk6jQ5eGfTsG8kg")
+                .setOAuthAccessToken("927024486-4X07W3nTicx2SG0dTccqsNzraAyT1G8Ffc4VvNqN")
+                .setOAuthAccessTokenSecret("neehbYt9lBY6o29UdcMLsZ1Zs9vVLPPncOpivLoyXtA");
+        TwitterFactory tf = new TwitterFactory(cb.build());
+        twitter = tf.getInstance();
+    }
+
+    public void sendTweet() {
+        String latestStatus = "Hey check out this song: " + actualSongName;
+        try {
+            Status status = twitter.updateStatus(latestStatus);
+        } catch (TwitterException e) {
+            Toast.makeText(this, "Error", Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+        }
 
     }
 
@@ -375,6 +423,9 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
 
     }
 
+    /*
+    Metoda na gesta - fling - swipe
+     */
     @Override
     public boolean onFling(MotionEvent downEvent, MotionEvent moveEvent, float velocityX, float velocityY) {
         boolean result = false;
@@ -397,13 +448,12 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         else {
             // nahoru dolu
         }
-
         return result;
     }
 
     private void onSwipeLeft() {
         Toast.makeText(this, "Swipe left", Toast.LENGTH_SHORT).show();
-
+        updateDuration.interrupt();
         rotateAnimationRight();
         fadeNextAnimation();
         mediaPlayer.stop();
@@ -413,6 +463,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         Uri uri = Uri.parse(songList.get(pos).toString());
         mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
         songName = songList.get(pos).getName();
+        actualSongName = songList.get(pos).getName();
         songNameTextView.setText(songName);
         songDurationBar.setMax(mediaPlayer.getDuration());
 
@@ -421,7 +472,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
 
     private void onSwipeRgiht() {
         Toast.makeText(this, "Swipe right", Toast.LENGTH_SHORT).show();
-
+        updateDuration.interrupt();
         rotateAnimationLeft();
         fadePreviousAnimation();
         mediaPlayer.stop();
@@ -431,6 +482,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         Uri uri = Uri.parse(songList.get(pos).toString());
         mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
         songName = songList.get(pos).getName();
+        actualSongName = songList.get(pos).getName();
         songNameTextView.setText(songName);
         songDurationBar.setMax(mediaPlayer.getDuration());
 
@@ -442,4 +494,6 @@ public class MusicPlayerActivity extends AppCompatActivity implements GestureDet
         gestureDetector.onTouchEvent(event);
         return super.onTouchEvent(event);
     }
+
+
 }
