@@ -12,9 +12,11 @@ import android.graphics.PorterDuffColorFilter;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -27,8 +29,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.util.ArrayList;
 
-public class MusicPlayerActivity extends AppCompatActivity {
+public class MusicPlayerActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
 
+    public static final int SWIPE_TRESHOLD = 100;
+    public static final int SWIPE_VELOCITY_TRESHOLD = 100;
     TextView songNameTextView;
     Button nextButton, previousButton, pauseButton;
     SeekBar songDurationBar;
@@ -43,6 +47,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
 
     ArrayList<File> songList;
     Thread updateDuration; // Vyuziti threadu pri praci s zobrazovanim prubehu pisne
+    private GestureDetector gestureDetector;
 
     /*
     Tvorba menu v aktivite prehravace
@@ -234,6 +239,8 @@ public class MusicPlayerActivity extends AppCompatActivity {
                 mediaPlayer.start();
             }
         });
+
+        gestureDetector = new GestureDetector(this);
     }
 
 
@@ -268,5 +275,102 @@ public class MusicPlayerActivity extends AppCompatActivity {
     private void fadePreviousAnimation(){
         rotateAnimation = AnimationUtils.loadAnimation(this,R.anim.fade);
         previousButton.startAnimation(rotateAnimation);
+    }
+
+
+    /*
+    Metody na gesta
+     */
+    @Override
+    public boolean onDown(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        return false;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onFling(MotionEvent downEvent, MotionEvent moveEvent, float velocityX, float velocityY) {
+        boolean result = false;
+        float diffY = moveEvent.getY() - downEvent.getY();
+        float diffX = moveEvent.getX() - downEvent.getY();
+
+        // ktery swipe byl vetsi - odkud kam provadim swipe
+        if(Math.abs(diffX) > Math.abs(diffY)){
+            // doleva nebo doprava
+            if(Math.abs(diffX) > SWIPE_TRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_TRESHOLD) {
+                if(diffX > 0){
+                    onSwipeRgiht();
+                }
+                else{
+                    onSwipeLeft();
+                }
+                result = true;
+            }
+        }
+        else {
+            // nahoru dolu
+        }
+
+        return result;
+    }
+
+    private void onSwipeLeft() {
+        Toast.makeText(this, "Swipe left", Toast.LENGTH_SHORT).show();
+
+        rotateAnimationRight();
+        fadeNextAnimation();
+        mediaPlayer.stop();
+        mediaPlayer.release();
+        pos = ((pos+1)%songList.size()); // zde se urcuje nova pozice
+
+        Uri uri = Uri.parse(songList.get(pos).toString());
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+        songName = songList.get(pos).getName();
+        songNameTextView.setText(songName);
+        songDurationBar.setMax(mediaPlayer.getDuration());
+
+        mediaPlayer.start();
+    }
+
+    private void onSwipeRgiht() {
+        Toast.makeText(this, "Swipe right", Toast.LENGTH_SHORT).show();
+
+        rotateAnimationLeft();
+        fadePreviousAnimation();
+        mediaPlayer.stop();
+        mediaPlayer.release();
+        pos = ((pos-1)<0)?(songList.size()-1):(pos-1); // zde se urcuje nova pozice
+
+        Uri uri = Uri.parse(songList.get(pos).toString());
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+        songName = songList.get(pos).getName();
+        songNameTextView.setText(songName);
+        songDurationBar.setMax(mediaPlayer.getDuration());
+
+        mediaPlayer.start();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 }

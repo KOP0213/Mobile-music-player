@@ -46,12 +46,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPermissionDenied(PermissionDeniedResponse response) {
-
             }
 
             @Override
             public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
-
             }
         }) .check();
     }
